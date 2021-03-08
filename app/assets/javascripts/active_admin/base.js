@@ -27,45 +27,58 @@
   function ModalDialog(message, inputs, callback) {
     var html = '<form id="dialog_confirm" title="' + message + '"><ul>';
     for (var name in inputs) {
-      var opts, wrapper;
+      var elem, opts, wrapper;
       var type = inputs[name];
-      if (/^(datepicker|checkbox|text|number)$/.test(type)) {
+      if (/^(datepicker|checkbox|text|number|batch_update_attr)$/.test(type)) {
         wrapper = "input";
       } else if (type === "textarea") {
         wrapper = "textarea";
       } else if ($.isArray(type)) {
-        var _ref = [ "select", type, "" ];
+        var _ref = [ "select", "option", type, "" ];
         wrapper = _ref[0];
-        opts = _ref[1];
-        type = _ref[2];
+        elem = _ref[1];
+        opts = _ref[2];
+        type = _ref[3];
+      } else if ($.isPlainObject(type) && type.multiple) {
+        var _ref2 = [ "select", "option", type.multiple, "multiple" ];
+        wrapper = _ref2[0];
+        elem = _ref2[1];
+        opts = _ref2[2];
+        type = _ref2[3];
       } else {
         throw new Error("Unsupported input type: {" + name + ": " + type + "}");
       }
-      var klass = type === "datepicker" ? type : "";
-      html += "<li>\n      <label>" + (name.charAt(0).toUpperCase() + name.slice(1)) + "</label>\n      <" + wrapper + ' name="' + name + '" class="' + klass + '" type="' + type + '">' + (opts ? function() {
-        var result = [];
-        opts.forEach(function(v) {
-          var $elem = $("<option></option>");
-          if ($.isArray(v)) {
-            $elem.text(v[0]).val(v[1]);
-          } else {
-            $elem.text(v);
-          }
-          result.push($elem.wrap("<div></div>").parent().html());
-        });
-        return result;
-      }().join("") : "") + ("</" + wrapper + ">") + "</li>";
-      var _ref2 = [];
-      wrapper = _ref2[0];
-      opts = _ref2[1];
-      type = _ref2[2];
-      klass = _ref2[3];
+      if (type === "batch_update_attr") {
+        html += "<li>\n        <label>" + (name.charAt(0).toUpperCase() + name.slice(1)) + '</label>\n        <input id="' + name + '" name="' + name + '" class="">\n        <label for="' + name + '_overwrite">overwrite?</label>\n        <input id="' + name + '_overwrite" name="' + name + '_overwrite" class="" type="checkbox">\n      </li>';
+      } else {
+        var klass = type === "datepicker" ? type : "";
+        html += "<li>\n        <label>" + (name.charAt(0).toUpperCase() + name.slice(1)) + "</label>\n        <" + wrapper + ' name="' + name + '" class="' + klass + '" type="' + type + '" ' + (type === "multiple" && "multiple size=10") + ">" + (opts ? function() {
+          var result = [];
+          opts.forEach(function(v) {
+            var $elem = $("<" + elem + "/>");
+            if ($.isArray(v)) {
+              $elem.text(v[0]).val(v[1]);
+            } else {
+              $elem.text(v);
+            }
+            result.push($elem.wrap("<div>").parent().html());
+          });
+          return result;
+        }().join("") : "") + ("</" + wrapper + ">") + "</li>";
+      }
+      var _ref3 = [];
+      wrapper = _ref3[0];
+      elem = _ref3[1];
+      opts = _ref3[2];
+      type = _ref3[3];
+      klass = _ref3[4];
     }
     html += "</ul></form>";
     var form = $(html).appendTo("body");
     $("body").trigger("modal_dialog:before_open", [ form ]);
     form.dialog({
       modal: true,
+      width: 600,
       open: function open(_event, _ui) {
         $("body").trigger("modal_dialog:after_open", [ form ]);
       },
